@@ -1,0 +1,10 @@
+.Rproj.user
+*.Rproj
+.Rhistory
+.RData
+
+bin/
+include/
+lib/
+
+*.csv
