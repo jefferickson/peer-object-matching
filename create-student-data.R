@@ -18,5 +18,25 @@ student.data <- data.frame(
   cont4 = rnorm(student.n)
   )
 
+#Create categories groups
+student.data$group <- paste(student.data$cat1, 
+                            student.data$cat2, 
+                            student.data$cat3, 
+                            student.data$cat4, sep="")
+
+#Delete individual groups
+student.data$cat1 <- NULL
+student.data$cat2 <- NULL
+student.data$cat3 <- NULL
+student.data$cat4 <- NULL
+
+#Rearrange
+student.data <- student.data[c("id",
+                               "group",
+                               "cont1",
+                               "cont2",
+                               "cont3",
+                               "cont4")]
+
 #Write as CSV
 write.table(student.data, file="student.data.csv", row.names=FALSE, col.names=FALSE, sep=",")
