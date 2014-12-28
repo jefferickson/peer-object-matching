@@ -19,11 +19,11 @@ The output will be:
 
 ### Categorical Data
 
-The categorical data can be anything. Grouping will be done on the unique values of this field. This can be a group label (`group1`, `group2`, etc.), concatenated categorical fields (`x:y` where x and y are different categorical flags), etc. While any number of data can be used, they must be concatenated into one field.
+The categorical data can be anything. Grouping will be done on the unique values of this field. This can be a group label (`group1`, `group2`, etc.), concatenated categorical fields (`x:y` where `x` and `y` are different categorical flags), etc. While any number of data can be used, they must be concatenated into one field.
 
 ### Continuous Data
 
-Any number of continuous dimensions can be used, as long as each object has the same number of dimensions. Objects will be matched based within their categorical groups based on the shortest distance between objects. Euclidean distance in N dimensions is used here, but other distance algorithms could be substituted.
+Any number of continuous dimensions can be used, as long as each object has the same number of dimensions. Objects will be matched based within their categorical groups based on the shortest distance between objects. Euclidean distance in _n_ dimensions is used here, but other distance algorithms could be substituted.
 
 ### Single-core vs. Multi-core
 
@@ -35,4 +35,4 @@ The included R script (`create-sample-input-data.R`) can be used to create sampl
 
 ### Performance
 
-Using sample data of 80000 objects, 16 categorical groups (4 binary flags), and 4 continuous dimensions, the single core version runs in 23 minutes and the multicore version runs in 10 minutes on a quad-core machine.
+Using sample data of 80,000 objects, 16 categorical groups (4 binary flags), and 4 continuous dimensions, the single core version runs in 23 minutes and the multicore version runs in 10 minutes on a quad-core machine.
