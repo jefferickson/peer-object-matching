@@ -5,6 +5,8 @@
 # Date:     2014-12-26
 ##########################################
 
+# USAGE: ./obj.match.singlecore.py INPUT_FILE OUTPUT_FILE
+
 import csv
 import math
 import heapq
@@ -37,9 +39,9 @@ def read_objects_and_group(input_file, delimiter = ','):
     with open(input_file) as csvfile: 
         reader = csv.reader(csvfile, delimiter = delimiter)
         for row in reader:
-            object_id, group, *coords = row
+            object_id, group, no_match_group, *coords = row
             coords_tuple = tuple([float(x) for x in coords])
-            groups.setdefault(group, {}).update({object_id: coords_tuple})
+            groups.setdefault(group, {}).update({object_id: [no_match_group, coords_tuple]})
     
     return groups
 
@@ -54,12 +56,16 @@ def calc_peer_groups_and_output(groups, output_file, delimiter = ',', max_peer_g
             objects_n = len(objects)
             cur_object_num = 1
 
-            for object1, coords1 in objects.items():
+            for object1, object1_params in objects.items():
                 sys.stdout.write('\r\x1b[2KGROUP: {}/{}, OBJECT: {}/{}'.format(cur_group_num, groups_n, cur_object_num, objects_n))
+                object1_no_match_group, coords1 = object1_params
                 distances = []
 
-                for object2, coords2 in objects.items():
+                for object2, object2_params in objects.items():
+                    object2_no_match_group, coords2 = object2_params
                     if object1 == object2: continue
+                    # If a no_match_group is defined, make sure it doesn't match.
+                    if object1_no_match_group and object1_no_match_group == object2_no_match_group: continue
                     try:
                         distance_between_objects = euclid_distance(coords1, coords2)
                     except TypeError as e:
@@ -85,16 +91,23 @@ class PeerGroupTooSmall(Exception):
 
 if __name__ == '__main__':
 
+    #Keep track of the runtime.
     start_time = datetime.now()
 
-    output_file = 'student.peer.groups.csv'
-    input_file = 'student.data.csv'
+    #Input and output files.
+    try:
+        input_file, output_file = sys.argv[1:]
+    except ValueError as e:
+        sys.exit('USAGE: ./obj.match.singlecore.py INPUT_FILE OUTPUT_FILE')
 
+    #Read in data and group.
     groups = read_objects_and_group(input_file)
 
+    #Calc the peer groups and output to file.
     try:
         calc_peer_groups_and_output(groups, output_file)
     except PeerGroupTooSmall as e:
         print(e.args[0])
 
+    #How long did it take?
     print(datetime.now() - start_time)

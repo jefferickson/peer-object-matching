@@ -5,6 +5,9 @@
 # Date:     2014-12-28
 ##########################################
 
+# USAGE: ./obj.match.multicore.py INPUT_FILE OUTPUT_FILE
+
+import sys
 import csv
 import math
 import heapq
@@ -36,11 +39,15 @@ def calc_a_peer_group(objects, max_peer_group_n = 100, min_peer_group_n = None, 
     
     # Iterate over each object, compare it to all other objects, and then find the closest peers.
     peer_groups = {}
-    for object_id, coords in objects.items():
+    for object_id, object_params in objects.items():
+        object_no_match_group, coords = object_params
         distances = []
 
-        for peer_object_id, peer_object_coords in objects.items():
+        for peer_object_id, peer_object_params in objects.items():
+            peer_object_no_match_group, peer_object_coords = peer_object_params
             if object_id == peer_object_id: continue
+            # If a no_match_group is defined, make sure it doesn't match.
+            if object_no_match_group and object_no_match_group == peer_object_no_match_group: continue
             try:
                 distance_between_objects = euclid_distance(coords, peer_object_coords)
             except TypeError as e:
@@ -63,9 +70,9 @@ def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ','):
     with open(input_file) as csvfile: 
         reader = csv.reader(csvfile, delimiter = delimiter)
         for row in reader:
-            object_id, group, *coords = row
+            object_id, group, no_match_group, *coords = row
             coords_tuple = tuple([float(x) for x in coords])
-            groups_dict.setdefault(group, {}).update({object_id: coords_tuple})
+            groups_dict.setdefault(group, {}).update({object_id: [no_match_group, coords_tuple]})
     groups_list = [objects for (group, objects) in groups_dict.items()]
 
     #Map peer group calc to each group and output.
@@ -87,8 +94,10 @@ if __name__ == '__main__':
     start_time = datetime.now()
 
     #Input and output files.
-    output_file = 'student.peer.groups.csv'
-    input_file = 'student.data.csv'
+    try:
+        input_file, output_file = sys.argv[1:]
+    except ValueError as e:
+        sys.exit('USAGE: ./obj.match.multicore.py INPUT_FILE OUTPUT_FILE')
 
     #Do the loading, calculations, and output.
     load_calc_output_all_peer_groups(input_file, output_file)

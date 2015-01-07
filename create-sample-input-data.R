@@ -11,6 +11,9 @@ student.data <- data.frame(
   cat3 = rbinom(student.n, 1, 0.5),
   cat4 = rbinom(student.n, 1, 0.5),
   
+  #No-match group
+  nomatch = rep("", student.n),
+  
   #Continuous data
   cont1 = rnorm(student.n),
   cont2 = rnorm(student.n),
@@ -33,6 +36,7 @@ student.data$cat4 <- NULL
 #Rearrange
 student.data <- student.data[c("id",
                                "group",
+                               "nomatch",
                                "cont1",
                                "cont2",
                                "cont3",
