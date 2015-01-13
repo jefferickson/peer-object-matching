@@ -28,7 +28,7 @@ def write_peer_group(f, object_id, peer_ids, delimiter = ','):
     '''Writes the object_id and the object_ids of the peers to file.'''
 
     f.write(object_id)
-    for peer_id in peer_ids:
+    for peer_id in sorted(peer_ids):
         f.write(delimiter + peer_id)
     f.write('\n')
 
@@ -56,7 +56,7 @@ def calc_peer_groups_and_output(groups, output_file, delimiter = ',', max_peer_g
             objects_n = len(objects)
             cur_object_num = 1
 
-            for object1, object1_params in objects.items():
+            for object1, object1_params in sorted(objects.items()):
                 sys.stdout.write('\r\x1b[2KGROUP: {}/{}, OBJECT: {}/{}'.format(cur_group_num, groups_n, cur_object_num, objects_n))
                 object1_no_match_group, coords1 = object1_params
                 distances = []

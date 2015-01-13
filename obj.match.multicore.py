@@ -28,9 +28,9 @@ def euclid_distance(coords1, coords2):
 def write_peer_groups(f, peer_groups, delimiter = ','):
     '''Writes the object_id and the object_ids of the peers to file.'''
 
-    for object_id, peer_ids in peer_groups.items():
+    for object_id, peer_ids in sorted(peer_groups.items()):
         f.write(object_id)
-        for peer_id in peer_ids:
+        for peer_id in sorted(peer_ids):
             f.write(delimiter + peer_id)
         f.write('\n')
 
