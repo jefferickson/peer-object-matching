@@ -36,12 +36,12 @@ def read_objects_and_group(input_file, delimiter = ','):
     '''Reads and groups objects (with coords) from file.'''
     
     groups = {}
-    with open(input_file) as csvfile: 
-        reader = csv.reader(csvfile, delimiter = delimiter)
+    with open(input_file) as f: 
+        reader = csv.reader(f, delimiter = delimiter)
         for row in reader:
             object_id, group, no_match_group, *coords = row
             coords_tuple = tuple([float(x) for x in coords])
-            groups.setdefault(group, {}).update({object_id: [no_match_group, coords_tuple]})
+            groups.setdefault(group, []).append((object_id, no_match_group, coords_tuple))
     
     return groups
 
@@ -56,13 +56,13 @@ def calc_peer_groups_and_output(groups, output_file, delimiter = ',', max_peer_g
             objects_n = len(objects)
             cur_object_num = 1
 
-            for object1, object1_params in sorted(objects.items()):
+            for object1_tuple in sorted(objects):
                 sys.stdout.write('\r\x1b[2KGROUP: {}/{}, OBJECT: {}/{}'.format(cur_group_num, groups_n, cur_object_num, objects_n))
-                object1_no_match_group, coords1 = object1_params
+                object1, object1_no_match_group, coords1 = object1_tuple
                 distances = []
 
-                for object2, object2_params in objects.items():
-                    object2_no_match_group, coords2 = object2_params
+                for object2_tuple in objects:
+                    object2, object2_no_match_group, coords2 = object2_tuple
                     if object1 == object2: continue
                     # If a no_match_group is defined, make sure it doesn't match.
                     if object1_no_match_group and object1_no_match_group == object2_no_match_group: continue
