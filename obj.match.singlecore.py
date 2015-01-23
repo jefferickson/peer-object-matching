@@ -17,7 +17,9 @@ import sys
 def euclid_distance(coords1, coords2):
     '''Calculates the Euclidean distance between two points of equal dimension.'''
 
-    assert len(coords1) == len(coords2), "ERROR: the tuples are not the same length!"
+    if len(coords1) != len(coords2):
+        raise DiffNumOfDims('ERROR: the tuples are not the same length!')
+
     sum = 0
     for x in range(len(coords1)):
         sum += (coords1[x] - coords2[x]) ** 2
@@ -39,7 +41,11 @@ def read_objects_and_group(input_file, delimiter = ','):
     with open(input_file) as f: 
         reader = csv.reader(f, delimiter = delimiter)
         for row in reader:
-            object_id, group, no_match_group, *coords = row
+            try:
+                object_id, group, no_match_group, *coords = row
+            except ValueError as e:
+                print('Not enough values in row: {}'.format(row))
+
             coords_tuple = tuple([float(x) for x in coords])
             groups.setdefault(group, []).append((object_id, no_match_group, coords_tuple))
     
@@ -68,7 +74,7 @@ def calc_peer_groups_and_output(groups, output_file, delimiter = ',', max_peer_g
                     if object1_no_match_group and object1_no_match_group == object2_no_match_group: continue
                     try:
                         distance_between_objects = euclid_distance(coords1, coords2)
-                    except TypeError as e:
+                    except (TypeError, DiffNumOfDims) as e:
                         print('Either {} or {} has invalid coordinates.'.format(object1, object2))
                     if not max_distance_allowed or distance_between_objects <= max_distance_allowed:
                         distances.append({'object_id': object2, 'distance': distance_between_objects})
@@ -86,6 +92,10 @@ def calc_peer_groups_and_output(groups, output_file, delimiter = ',', max_peer_g
 
 class PeerGroupTooSmall(Exception):
     '''Exception for when a peer group is below the minimum required.'''
+    pass
+
+class DiffNumOfDims(Exception):
+    '''Exception for when two tuples have a different number of dimensions.'''
     pass
 
 
