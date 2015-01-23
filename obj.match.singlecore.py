@@ -6,6 +6,8 @@
 ##########################################
 
 # USAGE: ./obj.match.singlecore.py INPUT_FILE OUTPUT_FILE
+# INPUT FILE FORMAT: object_id, categorical_group, no_match_group, continuous_data_1, continuous_data_2, ..., continuous_data_n
+# OUTPUT FILE FORMAT: object_id, peer_object_id_1, peer_object_id_2, ..., peer_object_id_n
 
 import csv
 import math
@@ -35,7 +37,7 @@ def write_peer_group(f, object_id, peer_ids, delimiter = ','):
     f.write('\n')
 
 def read_objects_and_group(input_file, delimiter = ','):
-    '''Reads and groups objects (with coords) from file.'''
+    '''Reads and groups objects (with coords) from file. Returns a dictionary of groups.'''
     
     groups = {}
     with open(input_file) as f: 
@@ -47,6 +49,7 @@ def read_objects_and_group(input_file, delimiter = ','):
                 print('Not enough values in row: {}'.format(row))
 
             coords_tuple = tuple([float(x) for x in coords])
+            #Add object and attributes (as tuple) to the group.
             groups.setdefault(group, []).append((object_id, no_match_group, coords_tuple))
     
     return groups
@@ -58,6 +61,7 @@ def calc_peer_groups_and_output(groups, output_file, delimiter = ',', max_peer_g
         groups_n = len(groups)
         cur_group_num = 1
 
+        #Loop for each object over every object, store distances, then find the smallest.
         for group, objects in groups.items():
             objects_n = len(objects)
             cur_object_num = 1
@@ -79,6 +83,7 @@ def calc_peer_groups_and_output(groups, output_file, delimiter = ',', max_peer_g
                     if not max_distance_allowed or distance_between_objects <= max_distance_allowed:
                         distances.append({'object_id': object2, 'distance': distance_between_objects})
                 
+                #Use a heap to find the smallest n distances and write them to file
                 peer_group = heapq.nsmallest(max_peer_group_n, distances, key = lambda s: s['distance'])
                 if min_peer_group_n and len(peer_group) < min_peer_group_n:
                     raise PeerGroupTooSmall('{} has too few peers.'.format(object1))

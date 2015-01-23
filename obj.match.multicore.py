@@ -6,6 +6,8 @@
 ##########################################
 
 # USAGE: ./obj.match.multicore.py INPUT_FILE OUTPUT_FILE
+# INPUT FILE FORMAT: object_id, categorical_group, no_match_group, continuous_data_1, continuous_data_2, ..., continuous_data_n
+# OUTPUT FILE FORMAT: object_id, peer_object_id_1, peer_object_id_2, ..., peer_object_id_n
 
 import sys
 import csv
@@ -39,6 +41,7 @@ def write_peer_groups(f, peer_groups, delimiter = ','):
 def calc_a_peer_group(subset_and_whole_group_tuple, max_peer_group_n = 100, min_peer_group_n = None, max_distance_allowed = None):
     '''For a given dict of objects, calculates peer groups for each object compared to the other objects.'''
 
+    # Break up the tuple we got from the generator generate_groups().
     group_subset, whole_group = subset_and_whole_group_tuple
     
     # Iterate over each object in subset, compare it to all other objects, and then find the closest peers.
@@ -62,20 +65,24 @@ def calc_a_peer_group(subset_and_whole_group_tuple, max_peer_group_n = 100, min_
             if not max_distance_allowed or distance_between_objects <= max_distance_allowed:
                 distances.append({'peer_object_id': peer_object_id, 'distance': distance_between_objects})
         
+        # Let's find the closest objects using a heap.
         peer_group = heapq.nsmallest(max_peer_group_n, distances, key = lambda s: s['distance'])
         if min_peer_group_n and len(peer_group) < min_peer_group_n:
             raise PeerGroupTooSmall('{} has too few peers.'.format(object_id))
         peer_ids = [peer_object['peer_object_id'] for peer_object in peer_group]
 
+        # Finally add them to our dictionary of results for this subset.
         peer_groups.update({object_id: peer_ids})
 
     print("{}: Ending process with {} objects.".format(datetime.now(), len(group_subset)))
 
+    # Return the peer group dict to be written to file.
     return peer_groups
 
 def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ','):
     '''Load object, groups, and coords from file, run peer group calc per group, and output.'''
 
+    # First we will load in all of the data, storing it by the categorical groups because they must be exact matches on that data.
     groups_dict = {}
     with open(input_file) as f: 
         reader = csv.reader(f, delimiter = delimiter)
@@ -87,20 +94,23 @@ def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ','):
             
             coords_tuple = tuple([float(x) for x in coords])
             groups_dict.setdefault(group, []).append((object_id, no_match_group, coords_tuple))
+    # Once everything is grouped by categorical identifiers, we can just pull out each group into a list 
+    # (we don't need the categorical data anymore as it is already grouped.)
     groups_list = [objects for (group, objects) in groups_dict.items()]
 
-    #Map peer group calc to each group and output.
-    #Uses each core of the processor.
+    # We are going to utilize the Map-Reduce method. We're going break up each group into pieces, assigning
+    # each to a processor thread. Upon return of the calculations, we will write out the results to file.
     with open(output_file, 'w') as f:
         with futures.ProcessPoolExecutor() as pool:
             for peer_groups in pool.map(calc_a_peer_group, list(generate_groups(groups_list))):
                 write_peer_groups(f, peer_groups)
 
 def generate_groups(groups, max_group_size = 1000):
-    '''A generator that slices up each group into chunks to aid with CPU utilization.'''
+    '''A generator that slices up each group into chunks to aid with CPU utilization. Yields a tuple of the subset and the whole group.'''
     
     for group in groups:
         for i in range(0, len(group), max_group_size):
+            # Yield a tuple of the m x n group to process. m rows with all n peer columns.
             yield group[i:i+max_group_size], group
 
 
