@@ -79,7 +79,7 @@ def calc_a_peer_group(subset_and_whole_group_tuple, max_peer_group_n = 100, min_
     # Return the peer group dict to be written to file.
     return peer_groups
 
-def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ','):
+def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', max_workers = None):
     '''Load object, groups, and coords from file, run peer group calc per group, and output.'''
 
     # First we will load in all of the data, storing it by the categorical groups because they must be exact matches on that data.
@@ -101,7 +101,7 @@ def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ','):
     # We are going to utilize the Map-Reduce method. We're going break up each group into pieces, assigning
     # each to a processor thread. Upon return of the calculations, we will write out the results to file.
     with open(output_file, 'w') as f:
-        with futures.ProcessPoolExecutor() as pool:
+        with futures.ProcessPoolExecutor(max_workers = max_workers) as pool:
             for peer_groups in pool.map(calc_a_peer_group, list(generate_groups(groups_list))):
                 write_peer_groups(f, peer_groups)
 

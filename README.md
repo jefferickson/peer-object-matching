@@ -25,9 +25,11 @@ The categorical data can be anything. Grouping will be done on the unique values
 
 Any number of continuous dimensions can be used, as long as each object has the same number of dimensions. Objects will be matched based within their categorical groups based on the shortest distance between objects. Euclidean distance in _n_ dimensions is used here, but other distance algorithms could be substituted.
 
-### Single-core vs. Multi-core
+### Single-core [deprecated] vs. Multi-core
 
-Two versions are provided: `obj.match.simplecore.py` and `obj.match.multicore.py`. The former uses only one CPU core and runs slower as a result. The second version employs parallel programming and uses as many cores as are available. It should be noted that this is not the only difference. The former file is more memory efficient on one core, so if running them on a single core machine, they are not equivalent and the single core version should be used.
+Because of improvements in the multi-core version, the single-core version [deprecated] is no longer necessary. For users that wish to only use one core (or wish to specify a maximum number of cores), an argument, `max_workers`, can be specified.
+
+The script breaks up processing into "chucks" in order to maximum CPU utilization across available cores.
 
 ### Sample Input Data
 
