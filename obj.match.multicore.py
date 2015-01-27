@@ -63,13 +63,13 @@ def calc_a_peer_group(subset_and_whole_group_tuple, max_peer_group_n = 100, min_
             except (TypeError, DiffNumOfDims) as e:
                 print('Either {} or {} has invalid coordinates.'.format(object_id, peer_object_id))
             if not max_distance_allowed or distance_between_objects <= max_distance_allowed:
-                distances.append({'peer_object_id': peer_object_id, 'distance': distance_between_objects})
+                distances.append((peer_object_id, distance_between_objects))
         
         # Let's find the closest objects using a heap.
-        peer_group = heapq.nsmallest(max_peer_group_n, distances, key = lambda s: s['distance'])
+        peer_group = heapq.nsmallest(max_peer_group_n, distances, key = lambda s: s[1])
         if min_peer_group_n and len(peer_group) < min_peer_group_n:
             raise PeerGroupTooSmall('{} has too few peers.'.format(object_id))
-        peer_ids = [peer_object['peer_object_id'] for peer_object in peer_group]
+        peer_ids = {peer_object[0] for peer_object in peer_group}
 
         # Finally add them to our dictionary of results for this subset.
         peer_groups.update({object_id: peer_ids})
@@ -96,7 +96,7 @@ def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', m
             groups_dict.setdefault(group, []).append((object_id, no_match_group, coords_tuple))
     # Once everything is grouped by categorical identifiers, we can just pull out each group into a list 
     # (we don't need the categorical data anymore as it is already grouped.)
-    groups_list = [objects for (group, objects) in groups_dict.items()]
+    groups_list = list(groups_dict.values())
 
     # We are going to utilize the Map-Reduce method. We're going break up each group into pieces, assigning
     # each to a processor thread. Upon return of the calculations, we will write out the results to file.
