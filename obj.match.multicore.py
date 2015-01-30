@@ -102,7 +102,7 @@ def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', m
     # each to a processor thread. Upon return of the calculations, we will write out the results to file.
     with open(output_file, 'w') as f:
         with futures.ProcessPoolExecutor(max_workers = max_workers) as pool:
-            for peer_groups in pool.map(calc_a_peer_group, list(generate_groups(groups_list))):
+            for peer_groups in pool.map(calc_a_peer_group, generate_groups(groups_list)):
                 write_peer_groups(f, peer_groups)
 
 def generate_groups(groups, max_group_size = 1000):
