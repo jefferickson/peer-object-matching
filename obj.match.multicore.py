@@ -29,6 +29,56 @@ def euclid_distance(coords1, coords2):
 
     return math.sqrt(sum)
 
+def memoize_peers(f):
+    '''A decorator to keep track of identical objects' peer groups so we can reuse them and not recalculate the whole group.'''
+
+    # We'll save the peer groups already calculated here.
+    memo = {}
+    def helper(an_object_to_peer, whole_group, *args, **kwargs):
+        '''Check to see if we've already done this comparison and store.'''
+
+        _, object_no_match_group, object_coords = an_object_to_peer
+        comparison_factors = (object_no_match_group, object_coords)
+
+        # If we are not utilizing object_no_match_group, then we cannot use the memo since we must rerun for all (no possible exact match)
+        # Otherwise, have we already calculated a peer group for these comparison factors?
+        if object_no_match_group and comparison_factors not in memo:
+            memo[comparison_factors] = f(an_object_to_peer, whole_group, *args, **kwargs)
+        elif not object_no_match_group:
+            return f(an_object_to_peer, whole_group, *args, **kwargs)
+        
+        return memo[comparison_factors]
+    
+    return helper
+
+def calc_peers_for_object(an_object_to_peer, whole_group, dist_formula = euclid_distance, 
+                            max_peer_group_n = 100, min_peer_group_n = None, max_distance_allowed = None):
+    '''Calculates the peers for a single object. Use in combo with @memoize_peers to utilize memoization.'''
+    
+    object_id, object_no_match_group, object_coords = an_object_to_peer
+    distances = []
+
+    for a_peer in whole_group:
+        peer_object_id, peer_object_no_match_group, peer_object_coords = a_peer
+        # Don't peer an object with itself.
+        if object_id == peer_object_id: continue
+        # If a no_match_group is defined, make sure it doesn't match.
+        if object_no_match_group and object_no_match_group == peer_object_no_match_group: continue
+        try:
+            distance_between_objects = dist_formula(object_coords, peer_object_coords)
+        except (TypeError, DiffNumOfDims) as e:
+            print('Either {} or {} has invalid coordinates.'.format(object_id, peer_object_id))
+        if not max_distance_allowed or distance_between_objects <= max_distance_allowed:
+            distances.append((peer_object_id, distance_between_objects))
+    
+    # Let's find the closest objects using a heap.
+    peer_group = heapq.nsmallest(max_peer_group_n, distances, key = lambda s: s[1])
+    if min_peer_group_n and len(peer_group) < min_peer_group_n:
+        raise PeerGroupTooSmall('{} has too few peers.'.format(object_id))
+    peer_ids = {peer_object[0] for peer_object in peer_group}
+
+    return peer_ids
+
 def write_peer_groups(f, peer_groups, delimiter = ','):
     '''Writes the object_id and the object_ids of the peers to file.'''
 
@@ -38,7 +88,7 @@ def write_peer_groups(f, peer_groups, delimiter = ','):
             f.write(delimiter + peer_id)
         f.write('\n')
 
-def calc_a_peer_group(subset_and_whole_group_tuple, max_peer_group_n = 100, min_peer_group_n = None, max_distance_allowed = None):
+def calc_peers_for_group(subset_and_whole_group_tuple, **kwargs_for_dist_calc):
     '''For a given dict of objects, calculates peer groups for each object compared to the other objects.'''
 
     # Break up the tuple we got from the generator generate_groups().
@@ -47,29 +97,14 @@ def calc_a_peer_group(subset_and_whole_group_tuple, max_peer_group_n = 100, min_
     # Iterate over each object in subset, compare it to all other objects, and then find the closest peers.
     peer_groups = {}
 
+    # Let's memoize the peer group calc function for this group to prevent repetition.
+    calc_distance_for_this_group = memoize_peers(calc_peers_for_object)
+
     print("{}: Starting process with {} objects.".format(datetime.now(), len(group_subset)))
 
     for an_object_to_peer in group_subset:
-        object_id, object_no_match_group, object_coords = an_object_to_peer
-        distances = []
-
-        for a_peer in whole_group:
-            peer_object_id, peer_object_no_match_group, peer_object_coords = a_peer
-            if object_id == peer_object_id: continue
-            # If a no_match_group is defined, make sure it doesn't match.
-            if object_no_match_group and object_no_match_group == peer_object_no_match_group: continue
-            try:
-                distance_between_objects = euclid_distance(object_coords, peer_object_coords)
-            except (TypeError, DiffNumOfDims) as e:
-                print('Either {} or {} has invalid coordinates.'.format(object_id, peer_object_id))
-            if not max_distance_allowed or distance_between_objects <= max_distance_allowed:
-                distances.append((peer_object_id, distance_between_objects))
-        
-        # Let's find the closest objects using a heap.
-        peer_group = heapq.nsmallest(max_peer_group_n, distances, key = lambda s: s[1])
-        if min_peer_group_n and len(peer_group) < min_peer_group_n:
-            raise PeerGroupTooSmall('{} has too few peers.'.format(object_id))
-        peer_ids = {peer_object[0] for peer_object in peer_group}
+        object_id, *_ = an_object_to_peer
+        peer_ids = calc_distance_for_this_group(an_object_to_peer, whole_group, **kwargs_for_dist_calc)
 
         # Finally add them to our dictionary of results for this subset.
         peer_groups.update({object_id: peer_ids})
@@ -79,7 +114,7 @@ def calc_a_peer_group(subset_and_whole_group_tuple, max_peer_group_n = 100, min_
     # Return the peer group dict to be written to file.
     return peer_groups
 
-def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', max_workers = None):
+def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', max_workers = None, max_group_size = 5000):
     '''Load object, groups, and coords from file, run peer group calc per group, and output.'''
 
     # First we will load in all of the data, storing it by the categorical groups because they must be exact matches on that data.
@@ -102,10 +137,10 @@ def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', m
     # each to a processor thread. Upon return of the calculations, we will write out the results to file.
     with open(output_file, 'w') as f:
         with futures.ProcessPoolExecutor(max_workers = max_workers) as pool:
-            for peer_groups in pool.map(calc_a_peer_group, generate_groups(groups_list)):
+            for peer_groups in pool.map(calc_peers_for_group, generate_groups(groups_list, max_group_size = max_group_size)):
                 write_peer_groups(f, peer_groups)
 
-def generate_groups(groups, max_group_size = 1000):
+def generate_groups(groups, max_group_size = 5000):
     '''A generator that slices up each group into chunks to aid with CPU utilization. Yields a tuple of the subset and the whole group.'''
     
     for group in groups:
@@ -135,7 +170,11 @@ if __name__ == '__main__':
         sys.exit('USAGE: ./obj.match.multicore.py INPUT_FILE OUTPUT_FILE')
 
     #Do the loading, calculations, and output.
-    load_calc_output_all_peer_groups(input_file, output_file)
+    #If not using no_match_groups, recommend 1000 for max_group_size.
+    #Otherwise 5000 has been working well.
+    #Too low and you may not be taking advantage of the memoize closure.
+    #Too high and you may not be utilizing CPU 100%.
+    load_calc_output_all_peer_groups(input_file, output_file, max_workers = None, max_group_size = 5000)
 
     #How long did it take?
     print(datetime.now() - start_time)
