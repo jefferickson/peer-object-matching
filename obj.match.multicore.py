@@ -5,14 +5,16 @@
 # Date:     2014-12-28
 ##########################################
 
-# USAGE: ./obj.match.multicore.py INPUT_FILE OUTPUT_FILE
+# USAGE: ./obj.match.multicore.py -i INPUT_FILE -o OUTPUT_FILE
+# (For help, see ./obj.match.multicore.py -h)
 # INPUT FILE FORMAT: object_id, categorical_group, no_match_group, continuous_data_1, continuous_data_2, ..., continuous_data_n
-# OUTPUT FILE FORMAT: object_id, peer_object_id_1, peer_object_id_2, ..., peer_object_id_n
+# OUTPUT FILE FORMAT: object_id, peer_object_id_1, peer_object_id_2, ..., peer_object_id_m
 
 import sys
 import csv
 import math
 import heapq
+import argparse
 from datetime import datetime
 from concurrent import futures
 
@@ -163,18 +165,24 @@ if __name__ == '__main__':
     #Keep track of the runtime.
     start_time = datetime.now()
 
-    #Input and output files.
-    try:
-        input_file, output_file = sys.argv[1:]
-    except ValueError as e:
-        sys.exit('USAGE: ./obj.match.multicore.py INPUT_FILE OUTPUT_FILE')
+    #Add and parse arguments using argparse.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', help = 'Input filename.', required = True)
+    parser.add_argument('-o', '--output', help = 'Output filename.', required = True)
+
+    #Optional
+    parser.add_argument('-w', '--workers', help = 'Set max number of workers to use for concurrent processing.', default = None, type = int)
+    parser.add_argument('-g', '--max_group_size', help = 'Set max group size per process.', default = 5000, type = int)
+
+    #Parse
+    cmd_line_args = parser.parse_args()
 
     #Do the loading, calculations, and output.
     #If not using no_match_groups, recommend 1000 for max_group_size.
     #Otherwise 5000 has been working well.
     #Too low and you may not be taking advantage of the memoize closure.
     #Too high and you may not be utilizing CPU 100%.
-    load_calc_output_all_peer_groups(input_file, output_file, max_workers = None, max_group_size = 5000)
+    load_calc_output_all_peer_groups(cmd_line_args.input, cmd_line_args.output, max_workers = cmd_line_args.workers, max_group_size = cmd_line_args.max_group_size)
 
     #How long did it take?
     print(datetime.now() - start_time)
