@@ -93,7 +93,7 @@ def calc_peers_for_object(an_object_to_peer, whole_group, dist_formula = euclid_
     avg_peer_dist = None
     if cmd_line_args.diag:
         n_peers = len(peer_group)
-        avg_peer_dist = sum([peer_object[1] for peer_object in peer_group]) / n_peers
+        avg_peer_dist = sum(peer_object[1] for peer_object in peer_group) / n_peers
 
     return peer_ids, n_peers, avg_peer_dist
 
@@ -151,7 +151,7 @@ def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', m
             except ValueError as e:
                 print('Not enough values in row: {}'.format(row))
             
-            coords_tuple = tuple([float(x) for x in coords])
+            coords_tuple = tuple(float(x) for x in coords)
             groups_dict.setdefault(group, []).append((object_id, no_match_group, coords_tuple))
     # Once everything is grouped by categorical identifiers, we can just pull out each group into a list 
     # (we don't need the categorical data anymore as it is already grouped.)
