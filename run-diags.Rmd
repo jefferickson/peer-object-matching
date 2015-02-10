@@ -1,0 +1,53 @@
+---
+output: html_document
+---
+
+<!-- #########################################
+# Author:   Jeff Erickson <jeff@erick.so>
+# Date:     2015-02-10
+# Desc:     R Script to visualizing diagnostics reported with -d <filename> option of obj.match.multicore.py.
+########################################## -->
+
+
+<!-- SETUP -->
+```{r, echo=FALSE, include=FALSE}
+diag.filename <- 'diag.csv' # Change to filename of diagnostic output.
+
+# Read in
+diag.output <- read.csv(diag.filename, header = FALSE, as.is = TRUE)
+names(diag.output) <- c("key", "value")
+
+# Required libraries
+require(ggplot2)
+```
+
+
+### Bin Size Distribution
+
+```{r, echo=FALSE, include=FALSE}
+bin.sizes <- diag.output[which(diag.output$key == "bin_size"), ]
+```
+
+```{r, echo=FALSE, message=FALSE}
+ggplot(bin.sizes, aes(x = value)) + geom_histogram() + labs(title = "Distribution of Bin Sizes", x = "Bin Size", y = "Count")
+```
+
+### Peer Group Size Distribution
+
+```{r, echo=FALSE, include=FALSE}
+peer.group.sizes <- diag.output[which(diag.output$key == "object_peer_group_size"), ]
+```
+
+```{r, echo=FALSE, message=FALSE}
+ggplot(peer.group.sizes, aes(x = value)) + geom_histogram() + labs(title = "Distribution of Peer Group Sizes", x = "Peer Group Size", y = "Count")
+```
+
+### Average Distance of Peers Distribution
+
+```{r, echo=FALSE, include=FALSE}
+avg.dist.of.peers <- diag.output[which(diag.output$key == "object_avg_peer_dist"), ]
+```
+
+```{r, echo=FALSE, message=FALSE}
+ggplot(avg.dist.of.peers, aes(x = value)) + geom_histogram() + labs(title = "Distribution of Average Peer Distance", x = "Avg Peer Distance", y = "Count")
+```

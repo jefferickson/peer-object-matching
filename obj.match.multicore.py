@@ -42,14 +42,23 @@ def memoize_peers(f):
         _, object_no_match_group, object_coords = an_object_to_peer
         comparison_factors = (object_no_match_group, object_coords)
 
+        # Have we already calculated a peer group for these comparison factors?
         # If we are not utilizing object_no_match_group, then we cannot use the memo since we must rerun for all (no possible exact match)
-        # Otherwise, have we already calculated a peer group for these comparison factors?
-        if object_no_match_group and comparison_factors not in memo:
-            memo[comparison_factors] = f(an_object_to_peer, whole_group, *args, **kwargs)
-        elif not object_no_match_group:
-            return f(an_object_to_peer, whole_group, *args, **kwargs)
+        if comparison_factors in memo:
+            peers_tuple = memo[comparison_factors]
+        else:
+            peers_tuple = f(an_object_to_peer, whole_group, *args, **kwargs)
+            if object_no_match_group:
+                memo[comparison_factors] = peers_tuple
         
-        return memo[comparison_factors]
+        peers, *diag_info = peers_tuple
+
+        # If reporting diagnostics, then write out info
+        if cmd_line_args.diag:
+            write_diag(cmd_line_args.diag, 'object_peer_group_size', diag_info[0])
+            write_diag(cmd_line_args.diag, 'object_avg_peer_dist', diag_info[1])
+
+        return peers 
     
     return helper
 
@@ -79,7 +88,14 @@ def calc_peers_for_object(an_object_to_peer, whole_group, dist_formula = euclid_
         raise PeerGroupTooSmall('{} has too few peers.'.format(object_id))
     peer_ids = {peer_object[0] for peer_object in peer_group}
 
-    return peer_ids
+    # For diagnostics, calc average peer distance and number of peers (keep as None for speed if cmd_line_args.diag == None)
+    n_peers = None
+    avg_peer_dist = None
+    if cmd_line_args.diag:
+        n_peers = len(peer_group)
+        avg_peer_dist = sum([peer_object[1] for peer_object in peer_group]) / n_peers
+
+    return peer_ids, n_peers, avg_peer_dist
 
 def write_peer_groups(f, peer_groups, delimiter = ','):
     '''Writes the object_id and the object_ids of the peers to file.'''
@@ -89,6 +105,12 @@ def write_peer_groups(f, peer_groups, delimiter = ','):
         for peer_id in sorted(peer_ids):
             f.write(delimiter + peer_id)
         f.write('\n')
+
+def write_diag(filename, label, diag, delimiter = ','):
+    '''Write the diagnostics out to file.'''
+
+    with open(filename, 'a') as f:
+        f.write(label + delimiter + str(diag) + '\n')
 
 def calc_peers_for_group(subset_and_whole_group_tuple, **kwargs_for_dist_calc):
     '''For a given dict of objects, calculates peer groups for each object compared to the other objects.'''
@@ -146,6 +168,11 @@ def generate_groups(groups, max_group_size = 5000):
     '''A generator that slices up each group into chunks to aid with CPU utilization. Yields a tuple of the subset and the whole group.'''
     
     for group in groups:
+
+        # If diagnostics reporting, report "bin size"
+        if cmd_line_args.diag:
+            write_diag(cmd_line_args.diag, 'bin_size', len(group))
+
         for i in range(0, len(group), max_group_size):
             # Yield a tuple of the m x n group to process. m rows with all n peer columns.
             yield group[i:i+max_group_size], group
@@ -173,6 +200,7 @@ if __name__ == '__main__':
     #Optional
     parser.add_argument('-w', '--workers', help = 'Set max number of workers to use for concurrent processing.', default = None, type = int)
     parser.add_argument('-g', '--max_group_size', help = 'Set max group size per process.', default = 5000, type = int)
+    parser.add_argument('-d', '--diag', help = 'Output diagnostic info to file.', default = None)
 
     #Parse
     cmd_line_args = parser.parse_args()
@@ -182,7 +210,9 @@ if __name__ == '__main__':
     #Otherwise 5000 has been working well.
     #Too low and you may not be taking advantage of the memoize closure.
     #Too high and you may not be utilizing CPU 100%.
-    load_calc_output_all_peer_groups(cmd_line_args.input, cmd_line_args.output, max_workers = cmd_line_args.workers, max_group_size = cmd_line_args.max_group_size)
+    load_calc_output_all_peer_groups(cmd_line_args.input, cmd_line_args.output,
+                                        max_workers = cmd_line_args.workers, 
+                                        max_group_size = cmd_line_args.max_group_size)
 
     #How long did it take?
     print(datetime.now() - start_time)

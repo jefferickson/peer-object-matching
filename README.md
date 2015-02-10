@@ -38,3 +38,7 @@ The included R script (`create-sample-input-data.R`) can be used to create sampl
 ### Performance
 
 Using sample data of 80,000 objects, 16 categorical groups (4 binary flags), and 4 continuous dimensions, the single core version runs in 23 minutes and the multicore version runs in 10 minutes on a quad-core machine. Performance varies based on the number of objects, the number of dimensions of continuous data, and the size of the categorical groups.
+
+### Diagnostics
+
+Using the optional `-d <FILENAME>` or `--diag <FILENAME>` argument will output certain diagnostic information regarding the bins (the groups of matching categorical data) and peer groups created from the run. This diagnostic information can be easily visualized by running the included R Markdown script (`run-diags.Rmd`) in RStudio.
