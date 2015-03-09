@@ -82,8 +82,15 @@ def calc_peers_for_object(an_object_to_peer, whole_group, dist_formula = euclid_
         if not max_distance_allowed or distance_between_objects <= max_distance_allowed:
             distances.append((peer_object_id, distance_between_objects))
     
-    # Let's find the closest objects using a heap.
-    peer_group = heapq.nsmallest(max_peer_group_n, distances, key = lambda s: s[1])
+    # Let's find the closest objects using a heap. Ties broken with ID unless option `--dont-break-ties` is used.
+    if cmd_line_args.dont_break_ties:
+        # distance only
+        key = lambda s: s[1]
+    else:
+        # distance, ties broken by ID
+        key = lambda s: (s[1], s[0])
+
+    peer_group = heapq.nsmallest(max_peer_group_n, distances, key = key)
     if min_peer_group_n and len(peer_group) < min_peer_group_n:
         raise PeerGroupTooSmall('{} has too few peers.'.format(object_id))
     peer_ids = {peer_object[0] for peer_object in peer_group}
@@ -201,6 +208,7 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--workers', help = 'Set max number of workers to use for concurrent processing.', default = None, type = int)
     parser.add_argument('-g', '--max_group_size', help = 'Set max group size per process.', default = 5000, type = int)
     parser.add_argument('-d', '--diag', help = 'Output diagnostic info to file.', default = None)
+    parser.add_argument('--dont-break-ties', help = 'Use to prevent the use of peer_object_id from breaking distance ties.', action = 'store_true')
 
     #Parse
     cmd_line_args = parser.parse_args()
