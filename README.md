@@ -5,13 +5,13 @@
 
 ### Overview
 
-Use to match objects (peer objects) based on categorical and continuous data. First, the objects are matched exactly based on their categorical data, then they are matched within each categorical group based on the Euclidean distance of their continuous data. The min and max number of matches, groups _not_ to match on, and the max distance can also be specified. 
+Use to match objects (peer objects) based on categorical and continuous data. First, the objects are matched exactly based on their categorical data, then they are matched within each categorical group based on the Euclidean distance of their continuous data. The min and max number of matches, group(s) _not_ to match on, and the max distance can also be specified. 
 
 The input should be of the following form:
 
-`object_id, categorical_data, no_match_group, cont_point_1, cont_point_2, ..., cont_point_n`
+`object_id, categorical_data, no_match_groups, cont_point_1, cont_point_2, ..., cont_point_n`
 
-with one object per line. Leaving `no_match_group` as a blank field will cause all objects to be compared within the categorical group.
+with one object per line. Leaving `no_match_group` as a blank field will cause all objects to be compared within the categorical group. Multiple groups not to match on can be separated by a '|' in this field.
 
 The output will be:
 
@@ -24,6 +24,10 @@ The categorical data can be anything. Grouping will be done on the unique values
 ### Continuous Data
 
 Any number of continuous dimensions can be used, as long as each object has the same number of dimensions. Objects will be matched based within their categorical groups based on the shortest distance between objects. Euclidean distance in _n_ dimensions is used here, but other distance algorithms could be substituted.
+
+### Lag Peers
+
+To specific a separate list of objects from which to peer, use the lag file option. Using option `--lag` or `-l`, a lag file can be specified with the same format as the usual input file. The objects in the lag file will be used as peers, but will not be peered themselves.
 
 ### Single-core [deprecated] vs. Multi-core
 

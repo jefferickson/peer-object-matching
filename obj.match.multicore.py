@@ -71,16 +71,34 @@ def calc_peers_for_object(an_object_to_peer, whole_group, dist_formula = euclid_
 
     for a_peer in whole_group:
         peer_object_id, peer_object_no_match_group, peer_object_coords = a_peer
-        # Don't peer an object with itself.
-        if object_id == peer_object_id: continue
-        # If a no_match_group is defined, make sure it doesn't match.
-        if object_no_match_group and object_no_match_group == peer_object_no_match_group: continue
+        
         try:
-            distance_between_objects = dist_formula(object_coords, peer_object_coords)
-        except (TypeError, DiffNumOfDims) as e:
-            print('Either {} or {} has invalid coordinates.'.format(object_id, peer_object_id))
-        if not max_distance_allowed or distance_between_objects <= max_distance_allowed:
-            distances.append((peer_object_id, distance_between_objects))
+            # Don't peer an object with itself.
+            if object_id == peer_object_id:
+                raise DoNotPeer('Do not peer an object with itself.')
+            # If a no_match_group is defined, make sure it doesn't match.
+            # Multiple no match groups can be separated with a '|'
+            if object_no_match_group:
+                object_no_match_groups = object_no_match_group.split('|')
+                peer_object_no_match_groups = peer_object_no_match_group.split('|')
+                for i, group in enumerate(object_no_match_groups):
+                    try:
+                        if group == peer_object_no_match_groups[i]:
+                            raise DoNotPeer('Object within no_match_group.')
+                    except IndexError as e:
+                        print('{} has different number of no match characteristics.'.format(peer_object_id))
+            # Calculate distance
+            try:
+                distance_between_objects = dist_formula(object_coords, peer_object_coords)
+            except (TypeError, DiffNumOfDims) as e:
+                print('Either {} or {} has invalid coordinates.'.format(object_id, peer_object_id))
+            if max_distance_allowed and distance_between_objects > max_distance_allowed:
+                raise DoNotPeer('Distance between object exceeds maximum allowed.')
+        except DoNotPeer as e:
+            # If raised DoNotPeer exception, then continue to next object
+            continue
+        # If everything went well, append to the list of peer options
+        distances.append((peer_object_id, distance_between_objects))
     
     # Let's find the closest objects using a heap. Ties broken with ID unless option `--dont-break-ties` is used.
     if cmd_line_args.dont_break_ties:
@@ -135,6 +153,7 @@ def calc_peers_for_group(subset_and_whole_group_tuple, **kwargs_for_dist_calc):
 
     for an_object_to_peer in group_subset:
         object_id, *_ = an_object_to_peer
+
         peer_ids = calc_distance_for_this_group(an_object_to_peer, whole_group, **kwargs_for_dist_calc)
 
         # Finally add them to our dictionary of results for this subset.
@@ -145,7 +164,7 @@ def calc_peers_for_group(subset_and_whole_group_tuple, **kwargs_for_dist_calc):
     # Return the peer group dict to be written to file.
     return peer_groups
 
-def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', max_workers = None, max_group_size = 5000):
+def load_calc_output_all_peer_groups(input_file, output_file, lag_file = None, delimiter = ',', max_workers = None, max_group_size = 5000):
     '''Load object, groups, and coords from file, run peer group calc per group, and output.'''
 
     # First we will load in all of the data, storing it by the categorical groups because they must be exact matches on that data.
@@ -158,31 +177,52 @@ def load_calc_output_all_peer_groups(input_file, output_file, delimiter = ',', m
             except ValueError as e:
                 print('Not enough values in row: {}'.format(row))
             
+            # Convert to float and add to the dictionary
             coords_tuple = tuple(float(x) for x in coords)
             groups_dict.setdefault(group, []).append((object_id, no_match_group, coords_tuple))
-    # Once everything is grouped by categorical identifiers, we can just pull out each group into a list 
-    # (we don't need the categorical data anymore as it is already grouped.)
-    groups_list = list(groups_dict.values())
+
+    # If we have a lag_file, load those as well
+    lag_groups_dict = {}
+    if lag_file:
+        with open(lag_file) as l:
+            reader = csv.reader(l, delimiter = delimiter)
+            for row in reader:
+                try:
+                    object_id, group, no_match_group, *coords = row
+                except ValueError as e:
+                    print('Not enough values in row: {}'.format(row))
+                
+                # Convert to float and add to the dictionary
+                coords_tuple = tuple(float(x) for x in coords)
+                lag_groups_dict.setdefault(group, []).append((object_id, no_match_group, coords_tuple))
 
     # We are going to utilize the Map-Reduce method. We're going break up each group into pieces, assigning
     # each to a processor thread. Upon return of the calculations, we will write out the results to file.
     with open(output_file, 'w') as f:
         with futures.ProcessPoolExecutor(max_workers = max_workers) as pool:
-            for peer_groups in pool.map(calc_peers_for_group, generate_groups(groups_list, max_group_size = max_group_size)):
+            for peer_groups in pool.map(calc_peers_for_group, generate_groups(groups_dict, lag_groups_dict, max_group_size = max_group_size)):
                 write_peer_groups(f, peer_groups)
 
-def generate_groups(groups, max_group_size = 5000):
-    '''A generator that slices up each group into chunks to aid with CPU utilization. Yields a tuple of the subset and the whole group.'''
+def generate_groups(groups, lag_groups = None, max_group_size = 5000):
+    '''A generator that slices up each group into chunks to aid with CPU utilization. Yields a tuple of the subset and the whole group.
+    If lag_groups is specified, it is used as the whole group.'''
     
-    for group in groups:
+    for group, objects in groups.items():
+
+        # If we are using lag_groups, then the peer_group should be the lag_group with the same group spec
+        # Otherwise it should just be the objects themselves
+        if lag_groups:
+            peer_group = lag_groups.get(group, [])
+        else:
+            peer_group = objects
 
         # If diagnostics reporting, report "bin size"
         if cmd_line_args.diag:
-            write_diag(cmd_line_args.diag, 'bin_size', len(group))
+            write_diag(cmd_line_args.diag, 'bin_size', len(peer_group))
 
-        for i in range(0, len(group), max_group_size):
+        for i in range(0, len(objects), max_group_size):
             # Yield a tuple of the m x n group to process. m rows with all n peer columns.
-            yield group[i:i+max_group_size], group
+            yield objects[i:i+max_group_size], peer_group
 
 
 class PeerGroupTooSmall(Exception):
@@ -191,6 +231,10 @@ class PeerGroupTooSmall(Exception):
 
 class DiffNumOfDims(Exception):
     '''Exception for when two tuples have a different number of dimensions.'''
+    pass
+
+class DoNotPeer(Exception):
+    '''Exception for when two objects should not be peered together.'''
     pass
 
 
@@ -205,6 +249,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', help = 'Output filename.', required = True)
 
     #Optional
+    parser.add_argument('-l', '--lag', help = 'Lag input filename. Use when the potential peers are not those that are being peered.', default = None)
     parser.add_argument('-w', '--workers', help = 'Set max number of workers to use for concurrent processing.', default = None, type = int)
     parser.add_argument('-g', '--max_group_size', help = 'Set max group size per process.', default = 5000, type = int)
     parser.add_argument('-d', '--diag', help = 'Output diagnostic info to file.', default = None)
@@ -219,6 +264,7 @@ if __name__ == '__main__':
     #Too low and you may not be taking advantage of the memoize closure.
     #Too high and you may not be utilizing CPU 100%.
     load_calc_output_all_peer_groups(cmd_line_args.input, cmd_line_args.output,
+                                        lag_file = cmd_line_args.lag,
                                         max_workers = cmd_line_args.workers, 
                                         max_group_size = cmd_line_args.max_group_size)
 
