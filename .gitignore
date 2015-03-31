@@ -10,3 +10,5 @@ __pycache__/
 
 *.csv
 *.html
+
+run_sample.py
