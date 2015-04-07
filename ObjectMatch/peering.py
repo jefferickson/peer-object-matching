@@ -67,12 +67,14 @@ def _calc_peers_for_object(an_object_to_peer, whole_group, *,
                         if group == peer_object_no_match_groups[i]:
                             raise utils.DoNotPeer('Object within no_match_group.')
                     except IndexError as e:
-                        print('{} has different number of no match characteristics.'.format(peer_object_id))
+                        raise utils.DiffNumOfDims('{} has different number of no match characteristics.'.format(peer_object_id))
             # Calculate distance
             try:
                 distance_between_objects = distance_function(object_coords, peer_object_coords)
-            except (TypeError, utils.DiffNumOfDims) as e:
-                print('Either {} or {} has invalid coordinates.'.format(object_id, peer_object_id))
+            except TypeError as e:
+                raise TypeError('Either {} or {} has invalid coordinates.'.format(object_id, peer_object_id))
+            except utils.DiffNumOfDims as e:
+                raise utils.DiffNumOfDims('Either {} or {} has invalid coordinates.'.format(object_id, peer_object_id))
             if max_distance_allowed and distance_between_objects > max_distance_allowed:
                 raise utils.DoNotPeer('Distance between object exceeds maximum allowed.')
         except utils.DoNotPeer as e:
