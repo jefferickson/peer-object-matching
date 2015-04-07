@@ -40,7 +40,7 @@ def _calc_peers_for_group(subset_and_whole_group_tuple, **kwargs):
 def _calc_peers_for_object(an_object_to_peer, whole_group, *,
                             distance_function = utils._euclid_distance,
                             max_distance_allowed = None,
-                            break_ties = True,
+                            break_ties_func = utils._hash_string,
                             max_peer_group_n,
                             min_peer_group_n = None,
                             diag = None
@@ -81,10 +81,10 @@ def _calc_peers_for_object(an_object_to_peer, whole_group, *,
         # If everything went well, append to the list of peer options
         distances.append((peer_object_id, distance_between_objects))
 
-    # Let's find the closest objects using a heap. Ties broken with ID unless self.break_ties == False
-    if break_ties:
+    # Let's find the closest objects using a heap. Ties on dist, ID broken with break_ties_func if def
+    if break_ties_func:
         # distance, ties broken by ID
-        key = lambda s: (s[1], s[0])
+        key = lambda s: (s[1], break_ties_func(s[0]))
     else:
         # distance only
         key = lambda s: s[1]

@@ -38,11 +38,11 @@ class ObjectMatch:
         self.max_group_size = 5000
 
         # Peer group settings
-        self.distance_function = utils._euclid_distance
+        self.distance_func = utils._euclid_distance
+        self.break_ties_func = utils._hash_string #None for random
         self.max_distance_allowed = None
         self.min_peer_group_n = None
         self.max_peer_group_n = None #Required, but can by set by self.run()
-        self.break_ties = True
 
         # Internal data storage
         self._groups = {}
@@ -77,9 +77,9 @@ class ObjectMatch:
         # each to a processor thread. Upon return of the calculations, we will write out the results to file.
         # First, we need to partially apply our args before mapping.
         partial_calc_peers_for_group = partial(peering._calc_peers_for_group,
-                                                distance_function = utils._euclid_distance,
+                                                distance_function = self.distance_func,
                                                 max_distance_allowed = self.max_distance_allowed,
-                                                break_ties = self.break_ties,
+                                                break_ties_func = self.break_ties_func,
                                                 max_peer_group_n = self.max_peer_group_n,
                                                 min_peer_group_n = self.min_peer_group_n,
                                                 diag = self.diag_file,

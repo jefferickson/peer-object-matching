@@ -6,6 +6,7 @@
 ##########################################
 
 import math
+import hashlib
 
 
 def _write_peer_groups(f, peer_groups, delimiter = ','):
@@ -66,6 +67,10 @@ def _euclid_distance(coords1, coords2):
 
     return math.sqrt(sum)
 
+def _hash_string(string):
+    '''Calculate hash of a string (encoded as UTF-8).'''
+
+    return hashlib.md5(string.encode('utf-8')).hexdigest()
 
 class PeerGroupTooSmall(Exception):
     '''Exception for when a peer group is below the minimum required.'''
