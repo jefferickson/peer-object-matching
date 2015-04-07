@@ -43,6 +43,7 @@ class ObjectMatch:
         self.max_distance_allowed = None
         self.min_peer_group_n = None
         self.max_peer_group_n = None #Required, but can by set by self.run()
+        self.dim_restrictions = {}
 
         # Internal data storage
         self._groups = {}
@@ -82,6 +83,7 @@ class ObjectMatch:
                                                 break_ties_func = self.break_ties_func,
                                                 max_peer_group_n = self.max_peer_group_n,
                                                 min_peer_group_n = self.min_peer_group_n,
+                                                dim_restrictions = self.dim_restrictions,
                                                 diag = self.diag_file,
                                                 )
         with open(self.output_file, 'w') as f:

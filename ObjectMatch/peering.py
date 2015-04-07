@@ -43,6 +43,7 @@ def _calc_peers_for_object(an_object_to_peer, whole_group, *,
                             break_ties_func = utils._hash_string,
                             max_peer_group_n,
                             min_peer_group_n = None,
+                            dim_restrictions = None,
                             diag = None
                             ):
     '''Calculates the peers for a single object. Use in combo with @memoize_peers to utilize memoization.'''
@@ -68,6 +69,14 @@ def _calc_peers_for_object(an_object_to_peer, whole_group, *,
                             raise utils.DoNotPeer('Object within no_match_group.')
                     except IndexError as e:
                         raise utils.DiffNumOfDims('{} has different number of no match characteristics.'.format(peer_object_id))
+            # If restricting specific dims, check those first
+            if dim_restrictions:
+                try:
+                    for dim, restriction in dim_restrictions.items():
+                        if not restriction(object_coords[dim], peer_object_coords[dim]):
+                            raise utils.DoNotPeer('Dimensional restriction.')
+                except IndexError as e:
+                    raise IndexError('Invalid dimensional restriction.')
             # Calculate distance
             try:
                 distance_between_objects = distance_function(object_coords, peer_object_coords)

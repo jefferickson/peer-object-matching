@@ -23,7 +23,7 @@ The categorical data can be anything. Grouping will be done on the unique values
 
 ### Continuous Data
 
-Any number of continuous dimensions can be used, as long as each object has the same number of dimensions. Objects will be matched based within their categorical groups based on the shortest distance between objects. Euclidean distance in _n_ dimensions is used here, but other distance algorithms could be substituted.
+Any number of continuous dimensions can be used, as long as each object has the same number of dimensions. Objects will be matched based within their categorical groups based on the shortest distance between objects. Euclidean distance in _n_ dimensions is used here, but other distance algorithms could be substituted. Restrictions can be placed on both the distance overall and the distance of specific dimensions.
 
 ### Lag Peers
 
