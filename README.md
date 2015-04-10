@@ -11,7 +11,7 @@ The input should be of the following form:
 
 `object_id, categorical_data, no_match_groups, cont_point_1, cont_point_2, ..., cont_point_n`
 
-with one object per line. Leaving `no_match_group` as a blank field will cause all objects to be compared within the categorical group. Multiple groups not to match on can be separated by a '|' in this field.
+with one object per line. Leaving `no_match_group` as a blank field will cause all objects to be compared within the categorical group. Multiple groups not to match on can be separated by a `|` in this field.
 
 The output will be:
 
