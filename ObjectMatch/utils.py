@@ -50,6 +50,8 @@ def _memoize_peers(f):
         if 'diag' in kwargs and kwargs['diag']:
             _write_diag(kwargs['diag'], 'object_peer_group_size', diag_info[0])
             _write_diag(kwargs['diag'], 'object_avg_peer_dist', diag_info[1])
+            _write_diag(kwargs['diag'], 'bin_size|object_avg_peer_dist',
+                                        '|'.join((str(len(whole_group)), str(diag_info[1]))))
 
         return peers
 

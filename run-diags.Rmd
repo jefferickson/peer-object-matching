@@ -19,6 +19,7 @@ names(diag.output) <- c("key", "value")
 
 # Required libraries
 require(ggplot2)
+require(plyr)
 ```
 
 
@@ -26,28 +27,54 @@ require(ggplot2)
 
 ```{r, echo=FALSE, include=FALSE}
 bin.sizes <- diag.output[which(diag.output$key == "bin_size"), ]
+bin.sizes$value <- as.numeric(bin.sizes$value)
 ```
 
 ```{r, echo=FALSE, message=FALSE}
-ggplot(bin.sizes, aes(x = value)) + geom_histogram() + labs(title = "Distribution of Bin Sizes", x = "Bin Size", y = "Count")
+ggplot(bin.sizes, aes(x = value)) + 
+  geom_histogram() + 
+  labs(title = "Distribution of Bin Sizes", x = "Bin Size", y = "Count")
 ```
 
 ### Peer Group Size Distribution
 
 ```{r, echo=FALSE, include=FALSE}
 peer.group.sizes <- diag.output[which(diag.output$key == "object_peer_group_size"), ]
+peer.group.sizes$value <- as.numeric(peer.group.sizes$value)
 ```
 
 ```{r, echo=FALSE, message=FALSE}
-ggplot(peer.group.sizes, aes(x = value)) + geom_histogram() + labs(title = "Distribution of Peer Group Sizes", x = "Peer Group Size", y = "Count")
+ggplot(peer.group.sizes, aes(x = value)) + 
+  geom_histogram() + 
+  labs(title = "Distribution of Peer Group Sizes", x = "Peer Group Size", y = "Count")
 ```
 
 ### Average Distance of Peers Distribution
 
 ```{r, echo=FALSE, include=FALSE}
 avg.dist.of.peers <- diag.output[which(diag.output$key == "object_avg_peer_dist"), ]
+avg.dist.of.peers$value <- as.numeric(avg.dist.of.peers$value)
 ```
 
 ```{r, echo=FALSE, message=FALSE}
-ggplot(avg.dist.of.peers, aes(x = value)) + geom_histogram() + labs(title = "Distribution of Average Peer Distance", x = "Avg Peer Distance", y = "Count")
+ggplot(avg.dist.of.peers, aes(x = value)) + 
+  geom_histogram() + 
+  labs(title = "Distribution of Average Peer Distance", x = "Avg Peer Distance", y = "Count")
+```
+
+### Average Distance per Bin vs. Bin Size
+
+```{r, echo=FALSE, include=FALSE}
+bin.and.avg.dist <- diag.output[which(diag.output$key == "bin_size|object_avg_peer_dist"), ]
+bin.and.avg.dist <- data.frame(do.call('rbind', strsplit(bin.and.avg.dist$value, '|', fixed = TRUE)))
+names(bin.and.avg.dist) <- c("bin_size", "object_avg_peer_dist")
+bin.and.avg.dist$bin_size <- as.numeric(as.character(bin.and.avg.dist$bin_size))
+bin.and.avg.dist$object_avg_peer_dist <- as.numeric(as.character(bin.and.avg.dist$object_avg_peer_dist))
+bin.and.avg.dist <- ddply(bin.and.avg.dist, .(bin_size), summarise, avg_dist = mean(object_avg_peer_dist))
+```
+
+```{r, echo=FALSE, message=FALSE}
+ggplot(bin.and.avg.dist, aes(x = bin_size, y = avg_dist)) + 
+  geom_point() + 
+  labs(title = "Bin Size vs. Avg of Avg Peer Distance", x = "Bin Size (n)", y = "Avg of Avg Peer Distance")
 ```
