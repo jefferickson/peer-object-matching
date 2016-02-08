@@ -11,17 +11,20 @@ def _write_peer_groups(f, peer_groups, delimiter = ','):
             f.write(delimiter + peer_id)
         f.write('\n')
 
+
 def _write_diag(diag_file, label, diag, delimiter = ','):
     '''Write the diagnostics out to file.'''
 
     with open(diag_file, 'a') as f:
         f.write(label + delimiter + str(diag) + '\n')
 
+
 def _memoize_peers(f):
     '''A decorator to keep track of identical objects' peer groups so we can reuse them and not recalculate the whole group.'''
 
     # We'll save the peer groups already calculated here.
     memo = {}
+
     def helper(an_object_to_peer, whole_group, *args, **kwargs):
         '''Check to see if we've already done this comparison and store.'''
 
@@ -50,6 +53,7 @@ def _memoize_peers(f):
 
     return helper
 
+
 def _euclid_distance(coords1, coords2):
     '''Calculates the Euclidean distance between two points of equal dimension.'''
 
@@ -62,22 +66,27 @@ def _euclid_distance(coords1, coords2):
 
     return math.sqrt(sum)
 
+
 def _hash_string(string):
     '''Calculate hash of a string (encoded as UTF-8).'''
 
     return hashlib.md5(string.encode('utf-8')).hexdigest()
 
+
 class PeerGroupTooSmall(Exception):
     '''Exception for when a peer group is below the minimum required.'''
     pass
+
 
 class DiffNumOfDims(Exception):
     '''Exception for when two tuples have a different number of dimensions.'''
     pass
 
+
 class DoNotPeer(Exception):
     '''Exception for when two objects should not be peered together.'''
     pass
+
 
 class IncompleteConfiguration(Exception):
     '''Exception for when not all required configures options are set.'''

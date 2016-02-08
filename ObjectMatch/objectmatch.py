@@ -19,8 +19,8 @@ class ObjectMatch:
     def __init__(self):
 
         # File names
-        self.input_file = None #Required
-        self.output_file = None #Required
+        self.input_file = None # Required
+        self.output_file = None # Required
         self.lag_file = None
         self.delimiter = ','
         # Write diagnostics to file?
@@ -32,10 +32,10 @@ class ObjectMatch:
 
         # Peer group settings
         self.distance_func = utils._euclid_distance
-        self.break_ties_func = utils._hash_string #None for random
+        self.break_ties_func = utils._hash_string # None for random
         self.max_distance_allowed = None
         self.min_peer_group_n = None
-        self.max_peer_group_n = None #Required, but can by set by self.run()
+        self.max_peer_group_n = None # Required, but can by set by self.run()
         self.dim_restrictions = {}
 
         # Internal data storage
@@ -71,14 +71,14 @@ class ObjectMatch:
         # each to a processor thread. Upon return of the calculations, we will write out the results to file.
         # First, we need to partially apply our args before mapping.
         partial_calc_peers_for_group = partial(peering._calc_peers_for_group,
-                                                distance_function = self.distance_func,
-                                                max_distance_allowed = self.max_distance_allowed,
-                                                break_ties_func = self.break_ties_func,
-                                                max_peer_group_n = self.max_peer_group_n,
-                                                min_peer_group_n = self.min_peer_group_n,
-                                                dim_restrictions = self.dim_restrictions,
-                                                diag = self.diag_file,
-                                                )
+                                               distance_function = self.distance_func,
+                                               max_distance_allowed = self.max_distance_allowed,
+                                               break_ties_func = self.break_ties_func,
+                                               max_peer_group_n = self.max_peer_group_n,
+                                               min_peer_group_n = self.min_peer_group_n,
+                                               dim_restrictions = self.dim_restrictions,
+                                               diag = self.diag_file,
+                                               )
         with open(self.output_file, 'w') as f:
             with futures.ProcessPoolExecutor(max_workers = self.max_workers) as pool:
                 for peer_groups in pool.map(partial_calc_peers_for_group, self._generate_groups()):
@@ -96,9 +96,9 @@ class ObjectMatch:
         '''Are we ready to self.run()? Check all config options required to make sure they are defined.'''
 
         if not all((self.input_file,
-                self.output_file,
-                self.max_peer_group_n,
-                )):
+                    self.output_file,
+                    self.max_peer_group_n,
+                   )):
             raise utils.IncompleteConfiguration('Missing required configuration options. See README.')
 
         # Make sure max number of peers is >= min number of peers (if the latter exists)

@@ -30,15 +30,16 @@ def _calc_peers_for_group(subset_and_whole_group_tuple, **kwargs):
     # Return the peer group dict to be written to file.
     return peer_groups
 
+
 def _calc_peers_for_object(an_object_to_peer, whole_group, *,
-                            distance_function = utils._euclid_distance,
-                            max_distance_allowed = None,
-                            break_ties_func = utils._hash_string,
-                            max_peer_group_n,
-                            min_peer_group_n = None,
-                            dim_restrictions = None,
-                            diag = None
-                            ):
+                           distance_function = utils._euclid_distance,
+                           max_distance_allowed = None,
+                           break_ties_func = utils._hash_string,
+                           max_peer_group_n,
+                           min_peer_group_n = None,
+                           dim_restrictions = None,
+                           diag = None
+                           ):
     '''Calculates the peers for a single object. Use in combo with @memoize_peers to utilize memoization.'''
 
     object_id, object_no_match_group, object_coords = an_object_to_peer
