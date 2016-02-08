@@ -1,7 +1,7 @@
 ## Peer Object Matching
 
 #### Author: Jeff Erickson `<jeff@erick.so>`
-#### Date: 2014-12-28 (Updated: 2015-04-07)
+#### Date: 2014-12-28 (Updated: 2016-02-08)
 
 ### Overview
 
@@ -11,7 +11,7 @@ The input should be of the following form:
 
 `object_id, categorical_data, no_match_groups, cont_point_1, cont_point_2, ..., cont_point_n`
 
-with one object per line. Leaving `no_match_group` as a blank field will cause all objects to be compared within the categorical group. Multiple groups not to match on can be separated by a `|` in this field.
+with one object per line. Leaving `no_match_group` as a blank field will cause all objects to be compared within the categorical group. Multiple groups not to match on can be separated by a `|` in this field. A sample input file, `test_data/sample_input_data.csv`, is provided for testing.
 
 The output will be:
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # Set (at least) the required settings
     match.input_file = 'input_data.csv'
     match.output_file = 'output_data.csv'
-    match.diag_file = 'diag_info.csv' #optional, don't use when speed is a concern
+    match.diag_file = 'diag_info.csv' # optional, don't use when speed is a concern
 
     # And GO!
     match.run(100) #Create groups of (at most) 100
