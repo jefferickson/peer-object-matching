@@ -1,10 +1,3 @@
-#! /usr/bin/env python3
-
-##########################################
-# Author:   Jeff Erickson <jeff@erick.so>
-# Date:     2014-12-28 (Updated 2015-03-31)
-##########################################
-
 from datetime import datetime
 import heapq
 
