@@ -54,19 +54,6 @@ def _memoize_peers(f):
     return helper
 
 
-def _euclid_distance(coords1, coords2):
-    '''Calculates the Euclidean distance between two points of equal dimension.'''
-
-    if len(coords1) != len(coords2):
-        raise DiffNumOfDims('ERROR: the tuples are not the same length!')
-
-    sum = 0
-    for x in range(len(coords1)):
-        sum += (coords1[x] - coords2[x]) ** 2
-
-    return math.sqrt(sum)
-
-
 def _hash_string(string):
     '''Calculate hash of a string (encoded as UTF-8).'''
 

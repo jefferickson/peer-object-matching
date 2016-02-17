@@ -6,6 +6,9 @@ from datetime import datetime
 import ObjectMatch.peering as peering
 import ObjectMatch.utils as utils
 
+import pyximport; pyximport.install()
+from ObjectMatch.distance_functions import euclid_distance
+
 
 class ObjectMatch:
     '''
@@ -31,7 +34,7 @@ class ObjectMatch:
         self.max_group_size = 5000
 
         # Peer group settings
-        self.distance_func = utils._euclid_distance
+        self.distance_func = euclid_distance
         self.break_ties_func = utils._hash_string # None for random
         self.max_distance_allowed = None
         self.min_peer_group_n = None

@@ -3,6 +3,8 @@ import heapq
 
 import ObjectMatch.utils as utils
 
+import pyximport; pyximport.install()
+from ObjectMatch.distance_functions import euclid_distance
 
 def _calc_peers_for_group(subset_and_whole_group_tuple, **kwargs):
     '''For a given dict of objects, calculates peer groups for each object compared to the other objects.'''
@@ -32,7 +34,7 @@ def _calc_peers_for_group(subset_and_whole_group_tuple, **kwargs):
 
 
 def _calc_peers_for_object(an_object_to_peer, whole_group, *,
-                           distance_function = utils._euclid_distance,
+                           distance_function = euclid_distance,
                            max_distance_allowed = None,
                            break_ties_func = utils._hash_string,
                            max_peer_group_n,
