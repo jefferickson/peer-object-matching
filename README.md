@@ -1,7 +1,11 @@
 ## Peer Object Matching
 
 #### Author: Jeff Erickson `<jeff@erick.so>`
-#### Date: 2014-12-28 (Updated: 2016-02-08)
+#### Date: 2014-12-28 (Updated: 2016-03-25)
+
+### Project Update
+
+This project is now serving as a prototype for the (much faster) [Go version](https://github.com/jefferickson/peer-object-matcher). Both will continue to be updated (for now), but I strongly recommend using the Go version in production, because of its speed.
 
 ### Overview
 
